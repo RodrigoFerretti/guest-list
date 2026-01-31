@@ -255,9 +255,37 @@
       border-color: #007aff;
       background: #fff;
     }
+
+    .login-overlay {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-overlay.hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
+  <div class="login-overlay" id="login-overlay">
+    <div class="modal-card">
+      <div class="modal-title">Senha</div>
+      <input type="password" class="modal-input" id="password-input" placeholder="Digite a senha">
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-confirm" id="login-btn">Entrar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="header">
     <h1>Bea&Phil 31/01</h1>
     <input type="text" class="search-input" placeholder="Buscar convidados..." id="search">
@@ -293,10 +321,48 @@
 
   <script>
     // CONFIGURE: Replace with your Google Apps Script Web App URL
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuJKat6vu9qE0Es25Uak5Y5oNxoGgYakeHWlOTZR2FyFOOM1XbcVoqmklCFsnh_tB9/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxvQJbXaI2vfuRlI14fnaNNpuCywVv9MZcP9VsL8PyCql5QWP-7sKKHDCsrJhT10IeH/exec';
 
     let guests = [];
     let selectedIndex = null;
+    let password = sessionStorage.getItem('guestListPwd') || '';
+
+    // Login handling
+    function checkLogin() {
+      if (password) {
+        document.getElementById('login-overlay').classList.add('hidden');
+        loadGuests();
+      }
+    }
+
+    document.getElementById('login-btn').addEventListener('click', tryLogin);
+    document.getElementById('password-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') tryLogin();
+    });
+
+    async function tryLogin() {
+      const input = document.getElementById('password-input');
+      password = input.value;
+
+      try {
+        const response = await fetch(`${SCRIPT_URL}?pwd=${encodeURIComponent(password)}`);
+        const data = await response.json();
+
+        if (data.error === 'Unauthorized') {
+          alert('Senha incorreta.');
+          password = '';
+          return;
+        }
+
+        sessionStorage.setItem('guestListPwd', password);
+        document.getElementById('login-overlay').classList.add('hidden');
+        guests = data;
+        renderGuests();
+      } catch (err) {
+        alert('Erro ao conectar.');
+        console.error(err);
+      }
+    }
 
     function openModal(index) {
       const guest = guests[index];
@@ -328,9 +394,17 @@
       const listEl = document.getElementById('guest-list');
 
       try {
-        const response = await fetch(SCRIPT_URL);
-        if (!response.ok) throw new Error('Failed to fetch');
-        guests = await response.json();
+        const response = await fetch(`${SCRIPT_URL}?pwd=${encodeURIComponent(password)}`);
+        const data = await response.json();
+
+        if (data.error === 'Unauthorized') {
+          sessionStorage.removeItem('guestListPwd');
+          password = '';
+          document.getElementById('login-overlay').classList.remove('hidden');
+          return;
+        }
+
+        guests = data;
         renderGuests();
       } catch (err) {
         listEl.innerHTML = '<li class="error">Erro ao carregar. Verifique sua conexão.</li>';
@@ -384,12 +458,18 @@
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({
+            pwd: password,
             guest: guest.guest,
             present: newPresence
           })
         });
 
-        if (!response.ok) throw new Error('Update failed');
+        const result = await response.json();
+        if (result.error === 'Unauthorized') {
+          sessionStorage.removeItem('guestListPwd');
+          location.reload();
+          return;
+        }
       } catch (err) {
         // Revert on error
         guest.present = !newPresence;
@@ -465,12 +545,19 @@
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
           body: JSON.stringify({
+            pwd: password,
             action: 'add',
             guest: name
           })
         });
 
         const result = await response.json();
+
+        if (result.error === 'Unauthorized') {
+          sessionStorage.removeItem('guestListPwd');
+          location.reload();
+          return;
+        }
 
         if (result.error) {
           alert(result.error === 'Guest already exists' ? 'Convidado já existe.' : result.error);
@@ -486,7 +573,7 @@
     }
 
     // Initial load
-    loadGuests();
+    checkLogin();
   </script>
 </body>
 </html>

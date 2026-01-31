@@ -1,3 +1,6 @@
+// PASSWORD - Change this to your desired password
+const PASSWORD = 'CHANGE_ME';
+
 /**
  * Google Apps Script for Guest List
  *
@@ -24,6 +27,12 @@
 // Handle GET requests - returns all guests as JSON
 function doGet(e) {
   try {
+    // Check password
+    const pwd = e.parameter.pwd;
+    if (pwd !== PASSWORD) {
+      return createJsonResponse({ error: 'Unauthorized' }, 401);
+    }
+
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     const data = sheet.getDataRange().getValues();
 
@@ -43,6 +52,12 @@ function doGet(e) {
 function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
+
+    // Check password
+    if (payload.pwd !== PASSWORD) {
+      return createJsonResponse({ error: 'Unauthorized' }, 401);
+    }
+
     const action = payload.action || 'update';
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
