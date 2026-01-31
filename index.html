@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Lista de Convidados</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .header {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #333;
+      text-align: center;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #f8f8f8;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: #007aff;
+      background: #fff;
+    }
+
+    .stats {
+      padding: 12px 16px;
+      font-size: 14px;
+      color: #666;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+    }
+
+    .guest-list {
+      list-style: none;
+      background: #fff;
+    }
+
+    .guest-item {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      transition: background 0.15s;
+      min-height: 56px;
+    }
+
+    .guest-item:active {
+      background: #f0f0f0;
+    }
+
+    .guest-item.present {
+      background: #f0fff4;
+    }
+
+    .guest-item.present:active {
+      background: #d4f5df;
+    }
+
+    .guest-name {
+      flex: 1;
+      font-size: 17px;
+      color: #333;
+    }
+
+    .guest-status {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.15s;
+    }
+
+    .guest-item.present .guest-status {
+      background: #34c759;
+      border-color: #34c759;
+      color: #fff;
+    }
+
+    .loading, .error, .empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+    }
+
+    .error {
+      color: #ff3b30;
+    }
+
+    .updating {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 300px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .modal-status {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 24px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .modal-btn {
+      padding: 14px 20px;
+      font-size: 16px;
+      font-weight: 500;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .modal-btn-confirm {
+      background: #34c759;
+      color: #fff;
+    }
+
+    .modal-btn-confirm:active {
+      background: #2da44e;
+    }
+
+    .modal-btn-remove {
+      background: #ff3b30;
+      color: #fff;
+    }
+
+    .modal-btn-remove:active {
+      background: #d63027;
+    }
+
+    .modal-btn-cancel {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .modal-btn-cancel:active {
+      background: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Lista de Convidados</h1>
+    <input type="text" class="search-input" placeholder="Buscar convidados..." id="search">
+  </div>
+  <div class="stats" id="stats"></div>
+  <ul class="guest-list" id="guest-list">
+    <li class="loading">Carregando convidados...</li>
+  </ul>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal-card">
+      <div class="modal-name" id="modal-name"></div>
+      <div class="modal-status" id="modal-status"></div>
+      <div class="modal-buttons">
+        <button class="modal-btn" id="modal-action"></button>
+        <button class="modal-btn modal-btn-cancel" id="modal-cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // CONFIGURE: Replace with your Google Apps Script Web App URL
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwtZ0w_GsQIkNkrps9aDJJ-CaSk_qIWCAeOnG3_RRa2LD9EEbSOiEPsGANxuOe4slre/exec';
+
+    let guests = [];
+    let selectedIndex = null;
+
+    function openModal(index) {
+      const guest = guests[index];
+      selectedIndex = index;
+
+      document.getElementById('modal-name').textContent = guest.guest;
+      document.getElementById('modal-status').textContent = guest.present
+        ? 'Atualmente: Presente'
+        : 'Atualmente: Não chegou';
+
+      const actionBtn = document.getElementById('modal-action');
+      if (guest.present) {
+        actionBtn.textContent = 'Remover presença';
+        actionBtn.className = 'modal-btn modal-btn-remove';
+      } else {
+        actionBtn.textContent = 'Confirmar presença';
+        actionBtn.className = 'modal-btn modal-btn-confirm';
+      }
+
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+      selectedIndex = null;
+    }
+
+    async function loadGuests() {
+      const listEl = document.getElementById('guest-list');
+
+      try {
+        const response = await fetch(SCRIPT_URL);
+        if (!response.ok) throw new Error('Failed to fetch');
+        guests = await response.json();
+        renderGuests();
+      } catch (err) {
+        listEl.innerHTML = '<li class="error">Erro ao carregar. Verifique sua conexão.</li>';
+        console.error(err);
+      }
+    }
+
+    function renderGuests() {
+      const listEl = document.getElementById('guest-list');
+      const statsEl = document.getElementById('stats');
+      const searchTerm = document.getElementById('search').value.toLowerCase();
+
+      const filtered = guests.filter(g =>
+        g.guest.toLowerCase().includes(searchTerm)
+      ).sort((a, b) => a.guest.localeCompare(b.guest, 'pt-BR'));
+
+      const presentCount = guests.filter(g => g.present).length;
+      statsEl.textContent = `${presentCount} de ${guests.length} presentes`;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<li class="empty">Nenhum convidado encontrado</li>';
+        return;
+      }
+
+      listEl.innerHTML = filtered.map((g, i) => {
+        const originalIndex = guests.indexOf(g);
+        return `
+          <li class="guest-item ${g.present ? 'present' : ''}" data-index="${originalIndex}">
+            <span class="guest-name">${escapeHtml(g.guest)}</span>
+            <span class="guest-status">${g.present ? '✓' : ''}</span>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function togglePresence(index) {
+      const guest = guests[index];
+      const newPresence = !guest.present;
+
+      // Optimistic update
+      guest.present = newPresence;
+      renderGuests();
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            guest: guest.guest,
+            present: newPresence
+          })
+        });
+
+        if (!response.ok) throw new Error('Update failed');
+      } catch (err) {
+        // Revert on error
+        guest.present = !newPresence;
+        renderGuests();
+        alert('Erro ao atualizar. Tente novamente.');
+        console.error(err);
+      }
+    }
+
+    // Event listeners
+    document.getElementById('search').addEventListener('input', renderGuests);
+
+    document.getElementById('guest-list').addEventListener('click', (e) => {
+      const item = e.target.closest('.guest-item');
+      if (!item || item.classList.contains('updating')) return;
+
+      const index = parseInt(item.dataset.index, 10);
+      openModal(index);
+    });
+
+    document.getElementById('modal-action').addEventListener('click', () => {
+      if (selectedIndex !== null) {
+        togglePresence(selectedIndex);
+        closeModal();
+      }
+    });
+
+    document.getElementById('modal-cancel').addEventListener('click', closeModal);
+
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target.id === 'modal') {
+        closeModal();
+      }
+    });
+
+    // Initial load
+    loadGuests();
+  </script>
+</body>
+</html>
