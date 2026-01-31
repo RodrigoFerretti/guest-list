@@ -39,20 +39,41 @@ function doGet(e) {
   }
 }
 
-// Handle POST requests - updates a guest's presence
+// Handle POST requests - updates presence or adds new guest
 function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
-    const guestName = payload.guest;
-    const present = payload.present;
+    const action = payload.action || 'update';
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+    if (action === 'add') {
+      // Add new guest
+      const guestName = payload.guest;
+      if (!guestName || !guestName.trim()) {
+        return createJsonResponse({ error: 'Guest name is required' }, 400);
+      }
+
+      // Check if guest already exists
+      const data = sheet.getDataRange().getValues();
+      for (let i = 1; i < data.length; i++) {
+        if (data[i][0].toLowerCase() === guestName.trim().toLowerCase()) {
+          return createJsonResponse({ error: 'Guest already exists' }, 400);
+        }
+      }
+
+      // Add new row
+      sheet.appendRow([guestName.trim(), '']);
+      return createJsonResponse({ success: true });
+    }
+
+    // Default: update presence
+    const guestName = payload.guest;
+    const present = payload.present;
     const data = sheet.getDataRange().getValues();
 
-    // Find the guest row (skip header)
     for (let i = 1; i < data.length; i++) {
       if (data[i][0] === guestName) {
-        // Update presence (column B = index 2)
         sheet.getRange(i + 1, 2).setValue(present ? 'x' : '');
         return createJsonResponse({ success: true });
       }

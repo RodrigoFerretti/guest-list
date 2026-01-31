@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <title>Lista de Convidados</title>
+  <title>Bea&Phil 31/01</title>
   <style>
     * {
       box-sizing: border-box;
@@ -208,17 +208,66 @@
     .modal-btn-cancel:active {
       background: #e0e0e0;
     }
+
+    .add-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #007aff;
+      color: #fff;
+      border: none;
+      font-size: 32px;
+      font-weight: 300;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+      z-index: 150;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .add-btn:active {
+      background: #0056b3;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 16px;
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #f8f8f8;
+      outline: none;
+      margin-bottom: 20px;
+    }
+
+    .modal-input:focus {
+      border-color: #007aff;
+      background: #fff;
+    }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>Lista de Convidados</h1>
+    <h1>Bea&Phil 31/01</h1>
     <input type="text" class="search-input" placeholder="Buscar convidados..." id="search">
   </div>
   <div class="stats" id="stats"></div>
   <ul class="guest-list" id="guest-list">
     <li class="loading">Carregando convidados...</li>
   </ul>
+
+  <button class="add-btn" id="add-btn">+</button>
 
   <div class="modal-overlay" id="modal">
     <div class="modal-card">
@@ -231,9 +280,20 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal-card">
+      <div class="modal-title">Adicionar Convidado</div>
+      <input type="text" class="modal-input" id="new-guest-name" placeholder="Nome do convidado">
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-confirm" id="add-guest-confirm">Adicionar</button>
+        <button class="modal-btn modal-btn-cancel" id="add-guest-cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // CONFIGURE: Replace with your Google Apps Script Web App URL
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwtZ0w_GsQIkNkrps9aDJJ-CaSk_qIWCAeOnG3_RRa2LD9EEbSOiEPsGANxuOe4slre/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwuJKat6vu9qE0Es25Uak5Y5oNxoGgYakeHWlOTZR2FyFOOM1XbcVoqmklCFsnh_tB9/exec';
 
     let guests = [];
     let selectedIndex = null;
@@ -364,6 +424,66 @@
         closeModal();
       }
     });
+
+    // Add guest modal
+    document.getElementById('add-btn').addEventListener('click', () => {
+      document.getElementById('new-guest-name').value = '';
+      document.getElementById('add-modal').classList.add('active');
+      document.getElementById('new-guest-name').focus();
+    });
+
+    document.getElementById('add-guest-cancel').addEventListener('click', () => {
+      document.getElementById('add-modal').classList.remove('active');
+    });
+
+    document.getElementById('add-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'add-modal') {
+        document.getElementById('add-modal').classList.remove('active');
+      }
+    });
+
+    document.getElementById('add-guest-confirm').addEventListener('click', addGuest);
+
+    document.getElementById('new-guest-name').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addGuest();
+      }
+    });
+
+    async function addGuest() {
+      const input = document.getElementById('new-guest-name');
+      const name = input.value.trim();
+
+      if (!name) {
+        alert('Digite o nome do convidado.');
+        return;
+      }
+
+      document.getElementById('add-modal').classList.remove('active');
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'add',
+            guest: name
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+          alert(result.error === 'Guest already exists' ? 'Convidado já existe.' : result.error);
+          return;
+        }
+
+        // Reload list to get updated data
+        await loadGuests();
+      } catch (err) {
+        alert('Erro ao adicionar. Tente novamente.');
+        console.error(err);
+      }
+    }
 
     // Initial load
     loadGuests();
