@@ -1,0 +1,17 @@
+# Copie este arquivo para config.yaml e edite. config.yaml não é versionado.
+
+# Nome do projeto no Cloudflare Pages. Vira a URL: https://<slug>.pages.dev
+# Só letras minúsculas, números e hífens (até 58 caracteres).
+slug: casamento-bea-phil
+
+# Título mostrado no topo do aplicativo.
+title: Casamento Bea & Phil
+
+# Senhas dos dois usuários. Só o hash delas vai para o Cloudflare.
+# admin: organizador (adiciona, remove, importa, exporta, estatísticas)
+# porta: quem recebe os convidados (só confirma chegadas)
+admin_password: troque-esta-senha
+host_password: outra-senha
+
+# Idioma da interface: pt-BR ou en
+language: pt-BR

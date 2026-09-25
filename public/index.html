@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="robots" content="noindex">
+  <title>Lista de convidados</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-overlay" id="login-overlay">
+    <div class="modal-card">
+      <div class="modal-title" id="login-title">Lista de convidados</div>
+      <p class="modal-status" data-i18n="login.hint">Entre com o usuário e a senha que você recebeu.</p>
+      <div class="segmented" id="user-select">
+        <button type="button" class="seg active" data-user="porta" data-i18n="login.host">Porta</button>
+        <button type="button" class="seg" data-user="admin" data-i18n="login.admin">Organizador</button>
+      </div>
+      <input type="password" class="modal-input" id="password-input" autocomplete="current-password" data-i18n-placeholder="login.placeholder" placeholder="Senha">
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-confirm" id="login-btn" data-i18n="login.enter">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="header-row">
+      <h1 id="title">Lista de convidados</h1>
+      <button class="icon-btn hidden" id="menu-btn" aria-label="Menu">⋯</button>
+    </div>
+    <input type="text" class="search-input" id="search" autocomplete="off" data-i18n-placeholder="search" placeholder="Buscar convidados...">
+  </div>
+  <div class="stats" id="stats"><span id="stats-text"></span><span class="role-badge" id="role-badge"></span></div>
+  <ul class="guest-list" id="guest-list">
+    <li class="loading" data-i18n="loading">Carregando convidados...</li>
+  </ul>
+
+  <button class="add-btn hidden" id="add-btn" aria-label="Adicionar">+</button>
+
+  <!-- convidado -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal-card">
+      <div class="modal-name" id="modal-name"></div>
+      <div class="modal-status" id="modal-status"></div>
+      <div class="modal-buttons">
+        <button class="modal-btn" id="modal-action"></button>
+        <button class="modal-btn modal-btn-danger-outline hidden" id="modal-remove"></button>
+        <button class="modal-btn modal-btn-cancel" id="modal-cancel" data-i18n="cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- adicionar -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal-card">
+      <div class="modal-title" data-i18n="add.title">Adicionar convidado</div>
+      <input type="text" class="modal-input" id="new-guest-name" autocomplete="off" data-i18n-placeholder="add.placeholder" placeholder="Nome do convidado">
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-confirm" id="add-guest-confirm" data-i18n="add.confirm">Adicionar</button>
+        <button class="modal-btn modal-btn-cancel" id="add-guest-cancel" data-i18n="cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- menu do admin -->
+  <div class="modal-overlay" id="menu-modal">
+    <div class="modal-card">
+      <div class="modal-title" data-i18n="menu.title">Organizador</div>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-neutral" id="menu-stats" data-i18n="menu.stats">Estatísticas</button>
+        <button class="modal-btn modal-btn-neutral" id="menu-import" data-i18n="menu.import">Importar nomes</button>
+        <button class="modal-btn modal-btn-neutral" id="menu-export" data-i18n="menu.export">Exportar CSV</button>
+        <button class="modal-btn modal-btn-neutral" id="menu-logout" data-i18n="menu.logout">Sair deste aparelho</button>
+        <button class="modal-btn modal-btn-cancel" id="menu-cancel" data-i18n="close">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- estatísticas -->
+  <div class="modal-overlay" id="stats-modal">
+    <div class="modal-card modal-wide">
+      <div class="modal-title" data-i18n="stats.title">Estatísticas</div>
+      <div id="stats-body"></div>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-cancel" id="stats-close" data-i18n="close">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- importar -->
+  <div class="modal-overlay" id="import-modal">
+    <div class="modal-card modal-wide">
+      <div class="modal-title" data-i18n="import.title">Importar nomes</div>
+      <p class="modal-status" data-i18n="import.hint">Um nome por linha. Nomes repetidos são ignorados.</p>
+      <textarea class="modal-input modal-textarea" id="import-text" rows="8"></textarea>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-confirm" id="import-confirm" data-i18n="import.confirm">Importar</button>
+        <button class="modal-btn modal-btn-cancel" id="import-cancel" data-i18n="cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# configuração desta implantação (não versionar)
+config.yaml
+wrangler.jsonc
+qr-code.png
+.wrangler/
+.dev.vars
+
+# dependências e temporários
+node_modules/
+*.log
+
+# dados de convidados nunca entram no repositório
+*.csv
+*.xlsx
+
+# material local que não faz parte do aplicativo
+reports/
+images/
